@@ -18,3 +18,4 @@ __pycache__
 # clangd
 .cache/
 app/.cache/
+/.cache/
