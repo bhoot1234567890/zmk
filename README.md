@@ -203,6 +203,55 @@ zmk/
 
 ---
 
+## Utility Scripts
+
+The TKL shield includes helpful Python scripts for keymap development:
+
+```bash
+cd app/boards/shields/tkl_nrf52832
+```
+
+### Validate Keymap
+
+Check your keymap for syntax errors before building:
+
+```bash
+python3 validate_keymap.py tkl_nrf52832.keymap
+```
+
+**What it does:**
+- Parses devicetree keymap syntax
+- Checks for undefined behaviors or keys
+- Validates layer structure
+- Reports binding count matches matrix size
+
+### Visualize Keymap
+
+Preview your keyboard layout as ASCII art:
+
+```bash
+python3 visualize_keymap.py tkl_nrf52832.keymap
+```
+
+**What it does:**
+- Generates visual keyboard layout
+- Shows key bindings per layer
+- Helps identify layout issues quickly
+
+### GPIO Wiring Helper
+
+Generate GPIO wiring diagrams for your PCB:
+
+```bash
+python3 nrf52832_gpio_wiring.py
+```
+
+**What it does:**
+- Generates pin mapping documentation
+- Helps verify matrix wiring matches schematic
+
+---
+
 ## Customization
 
 ### Changing the Keymap
