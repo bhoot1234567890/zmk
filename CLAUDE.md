@@ -17,14 +17,32 @@ west init -l app && west update
 # Build for a specific board with configuration
 west build -b <board> -p -- -DZMK_CONFIG=<config_path>
 
-# Example: Build for nice_nano with a config directory
-west build -b nice_nano -p -- -DZMK_CONFIG=config/my_keyboard
+# Build board + shield
+west build -b <board> -p -- -DSHIELD=<shield_name>
 
 # Clean build
 west build -b <board> --pristine
 ```
 
-Common boards: `nice_nano`, `pro_micro`, `nrfmicro_13`, `planck`, `corne`
+### Common Boards
+
+| Board | Chip | Flash | RAM | Notes |
+|-------|------|-------|-----|-------|
+| `nice_nano` | nRF52840 | 792 KB | 256 KB | Popular for DIY keyboards |
+| `nrf52832_mdk` | nRF52832 | 512 KB | 64 KB | MakerDiary nRF52832 |
+| `pro_micro` | ATmega32U4 | - | - | USB-only |
+| `nrfmicro_13` | nRF52840 | 792 KB | 256 KB | Micro controller |
+
+### Project-Specific Builds
+
+```bash
+# TKL shield with nRF52832 (this repository)
+cd app
+west build -b nrf52832_mdk --pristine -- -DSHIELD=tkl_nrf52832
+
+# TKL shield with nice_nano (for testing, not recommended for nRF52832 PCBs)
+west build -b nice_nano --pristine -- -DSHIELD=tkl_nrf52832
+```
 
 ## Testing
 
@@ -92,8 +110,8 @@ zmk/
 │   ├── boards/           # Board definitions (shields in boards/shields/)
 │   ├── tests/            # Test suites
 │   └── scripts/          # West commands
-├── modules/              # Zephyr modules (HAL, libraries)
-├── zephyr/              # Forked Zephyr RTOS
+├── modules/              # Zephyr modules (HAL, libraries, custom drivers)
+├── zephyr/              # Forked Zephyr RTOS (NOT in git - managed by west)
 └── docs/                # Documentation site (Docusaurus)
 ```
 
@@ -122,12 +140,160 @@ zmk/
 
 Much of the codebase uses Zephyr Kconfig flags (e.g., `CONFIG_ZMK_BLE`, `CONFIG_ZMK_SPLIT`, `CONFIG_ZMK_BEHAVIOR_HOLD_TAP`). Check `app/CMakeLists.txt` for how sources are conditionally included.
 
+## Project-Specific: TKL Shield
+
+This repository includes a custom TKL (Tenkeyless) shield: `app/boards/shields/tkl_nrf52832/`
+
+### Shield Configuration
+
+- **Matrix**: 8x14 (99 keys for TKL layout)
+- **Target**: nRF52832-based custom PCBs
+- **Features**:
+  - Multi-layer keymaps with Windows/Mac/Android modes
+  - BLE profile switching (5 profiles)
+  - I2C trackpad support (Azoteq IQS5xx)
+  - OLED display support (optional)
+
+### Shield Files
+
+```
+app/boards/shields/tkl_nrf52832/
+├── tkl_nrf52832.dtsi        # Matrix definition
+├── tkl_nrf52832.overlay     # Hardware overlay (I2C, GPIO)
+├── tkl_nrf52832.keymap      # Default keymap layers
+├── tkl_nrf52832.conf        # Kconfig settings
+├── tkl_nrf52832.zmk.yml     # Hardware metadata
+├── nrf52832_gpio_wiring.py  # GPIO wiring helper script
+└── validate_matrix.py       # Matrix validation script
+```
+
+### Building for TKL
+
+```bash
+# For nRF52832 (recommended for custom PCBs)
+west build -b nrf52832_mdk --pristine -- -DSHIELD=tkl_nrf52832
+
+# Output: zmk.hex (Intel HEX format for flashing)
+# Location: app/build/zephyr/zmk.hex
+```
+
+## Project-Specific: IQS5xx Trackpad Driver
+
+This repository integrates the [Azoteq IQS5xx trackpad driver](https://github.com/AYM1607/zmk-driver-azoteq-iqs5xx) via west manifest.
+
+### Driver Configuration
+
+The driver is configured in `app/boards/shields/tkl_nrf52832/tkl_nrf52832.overlay`:
+
+```devicetree
+&i2c0 {
+    trackpad: iqs5xx@74 {
+        compatible = "azoteq,iqs5xx";
+        reg = <0x74>;
+        rdy-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+
+        // Gesture configuration
+        one-finger-tap;
+        press-and-hold;
+        press-and-hold-time = <250>;
+        two-finger-tap;
+        scroll;
+        natural-scroll-y;
+    };
+};
+```
+
+### Kconfig Settings
+
+In `tkl_nrf52832.conf`:
+```
+CONFIG_INPUT=y
+CONFIG_INPUT_AZOTEQ_IQS5XX=y
+CONFIG_ZMK_MOUSE=y
+```
+
+## Known Issues and Fixes
+
+### Picolibc Locks.c Compatibility Issue
+
+**Issue**: Zephyr 4.1.0 has a type mismatch between picolibc's `struct __lock` declaration and Zephyr's mutex implementation.
+
+**Fix**: Apply `picolibc-locks-fix.patch` located in the repository root:
+
+```bash
+cd /path/to/zmk
+patch -p1 < picolibc-locks-fix.patch
+```
+
+**What the fix does**:
+- Creates a proper `struct __lock` wrapper that contains a `struct k_mutex`
+- Supports both userspace and kernel configurations
+- Properly handles memory allocation for dynamic locks
+
+**Verification**: After applying the patch and building, verify with:
+```bash
+nm app/build/zephyr/zmk.elf | grep iqs5xx
+# Should show: CONFIG_DT_HAS_AZOTEQ_IQS5XX_ENABLED, CONFIG_INPUT_AZOTEQ_IQS5XX
+```
+
+### Memory Usage Warning
+
+When building for nRF52832 with TKL shield:
+- **RAM usage**: ~69% (45 KB / 64 KB) - Monitor carefully when adding features
+- **Flash usage**: ~36% (191 KB / 512 KB) - Plenty of room
+
 ## Configuration Files
 
 - **Keymaps**: Devicetree `.keymap` files defining layers and behaviors
 - **Board overlays**: `.overlay` files for hardware pin mappings
 - **Hardware metadata**: JSON schemas in `schema/` for board/shield definitions
 - **West manifest**: `app/west.yml` defines module dependencies
+
+## West Modules
+
+External Zephyr modules can be added via `app/west.yml`:
+
+```yaml
+manifest:
+  remotes:
+    - name: AYM1607
+      url-base: https://github.com/AYM1607
+  projects:
+    - name: zmk-driver-azoteq-iqs5xx
+      revision: main
+      remote: AYM1607
+      path: modules/zmk-driver-azoteq-iqs5xx
+```
+
+After modifying `west.yml`, run:
+```bash
+west update
+```
+
+## Git Workflow
+
+This repository uses a fork-based workflow since you cannot push to the official ZMK repository.
+
+### Remotes
+
+- `origin` → https://github.com/zmkfirmware/zmk.git (official - pull only)
+- `fork` → https://github.com/bhoot1234567890/zmk.git (your fork - push here)
+
+### Common Commands
+
+```bash
+# Pull latest updates from ZMK
+git pull origin main
+
+# Push your changes to your fork
+git push fork main
+
+# Sync your fork with upstream (if needed)
+git fetch origin
+git rebase origin/main
+git push fork main --force
+```
 
 ## Documentation
 
@@ -142,7 +308,7 @@ Documentation is built with Docusaurus and lives in `docs/`.
 
 ## Important Patterns
 
-1. **Never modify Zephyr directly** - The `zephyr/` directory is a fork. Changes should go upstream to Zephyr or be handled as patches.
+1. **Never modify Zephyr directly** - The `zephyr/` directory is managed by west and excluded from git. Changes should be saved as patches.
 
 2. **Test native_sim first** - The `native_sim` board allows testing without hardware. Always run relevant tests before assuming code works.
 
@@ -152,8 +318,11 @@ Documentation is built with Docusaurus and lives in `docs/`.
 
 5. **Event listeners, not polling** - Use the event system for state changes rather than polling.
 
+6. **Use west for modules** - External drivers and libraries should be added via west.yml, not manually copied.
+
 ## Useful References
 
 - [ZMK Documentation](https://zmk.dev/)
 - [Zephyr Documentation](https://docs.zephyrproject.org/)
 - [Devicetree Specification](https://www.devicetree.org/)
+- [IQS5xx Driver Repo](https://github.com/AYM1607/zmk-driver-azoteq-iqs5xx)
