@@ -1,0 +1,6 @@
+file_format: "1"
+id: nrf52840dk_tester
+name: nRF52840 DK Tester
+type: shield
+features:
+  - keys
