@@ -653,7 +653,12 @@ endmenu # ZMK
 if SOC_FAMILY_NORDIC_NRF
 
 config NRF_SOC_VALIDATE_HEADERS_DISABLED
+    bool "Disable nRF SOC validate headers"
     default y
+    help
+      Disable the SOC header validation checks for Nordic nRF SoC builds.
+      This can be useful when headers differ from expected values and you
+      want to allow the build to proceed.
 
 endif
 

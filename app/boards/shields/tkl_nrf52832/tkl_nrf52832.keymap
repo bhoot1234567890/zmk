@@ -2,10 +2,12 @@
  * TKL Keyboard with Bluetooth & System Switching
  * 
  * Features:
- * - BLE Profiles: Switch between 5 paired devices (F13-F17)
- * - Output Toggle: BLE/USB switching (F18)
- * - Bluetooth Clear: Clear current profile pairing (F19)
+ * - BLE Profiles: Switch between 5 paired devices (F1-F5 on function layer)
+ * - Output Toggle: BLE/USB switching (F6 on function layer)
+ * - Bluetooth Clear: Clear current profile pairing (F7/F8 on function layer)
  * - Layer switching for additional functions
+ * 
+ * Matrix: 8 rows × 14 columns = 99 keys
  */
 
 #include <behaviors.dtsi>
@@ -21,7 +23,7 @@
             compatible = "zmk,behavior-tap-dance";
             #binding-cells = <0>;
             tapping-term-ms = <200>;
-            bindings = <&to 0>, <&to 2>;  // Toggle between default and Mac layer
+            bindings = <&to 0>, <&to 2>;
         };
 
         // Windows/Linux Copy (Ctrl+C)
@@ -48,7 +50,42 @@
             mods = <(MOD_LSFT)>;
         };
     };
-System Mode Switching:
+
+    keymap {
+        compatible = "zmk,keymap";
+
+        /* Layer 0: Default Windows/Linux Mode */
+        default_layer {
+            bindings = <
+                /* Row 0: ESC, F1-F12, DEL (14 keys) */
+                &kp ESC   &kp F1    &kp F2    &kp F3    &kp F4    &kp F5    &kp F6    &kp F7    &kp F8    &kp F9    &kp F10   &kp F11   &kp F12   &kp DEL
+
+                /* Row 1: Grave, 1-0, Minus, Equal, Backspace (14 keys) */
+                &kp GRAVE &kp N1    &kp N2    &kp N3    &kp N4    &kp N5    &kp N6    &kp N7    &kp N8    &kp N9    &kp N0    &kp MINUS &kp EQUAL &kp BSPC
+
+                /* Row 2: Tab, Q-P, [, ], \ (14 keys) */
+                &kp TAB   &kp Q     &kp W     &kp E     &kp R     &kp T     &kp Y     &kp U     &kp I     &kp O     &kp P     &kp LBKT  &kp RBKT  &kp BSLH
+
+                /* Row 3: Caps, A-L, ;, ', Enter (13 keys) */
+                &kp CAPS  &kp A     &kp S     &kp D     &kp F     &kp G     &kp H     &kp J     &kp K     &kp L     &kp SEMI  &kp SQT   &kp RET
+
+                /* Row 4: LShift, Z-M, ,, ., /, RShift, Up (13 keys) */
+                &kp LSHFT &kp Z     &kp X     &kp C     &kp V     &kp B     &kp N     &kp M     &kp COMMA &kp DOT   &kp FSLH  &kp RSHFT &kp UP
+
+                /* Row 5: LCtrl, LGUI, LAlt, Space, RAlt, RGUI, Fn, RCtrl, Left, Down, Right (11 keys) */
+                &kp LCTRL &kp LGUI  &kp LALT  &kp SPACE &kp RALT  &kp RGUI  &mo 1     &kp RCTRL &kp LEFT  &kp DOWN  &kp RIGHT
+
+                /* Row 6: NumLock, /, *, -, 7, 8, 9, +, Home, PgUp (10 keys) */
+                &kp KP_NUM &kp KP_DIVIDE &kp KP_MULTIPLY &kp KP_MINUS &kp KP_N7 &kp KP_N8 &kp KP_N9 &kp KP_PLUS &kp HOME &kp PG_UP
+
+                /* Row 7: 0, ., =, 1, 2, 3, 4, Ins, End, PgDn (10 keys) */
+                &kp KP_N0 &kp KP_DOT &kp EQUAL &kp KP_N1 &kp KP_N2 &kp KP_N3 &kp KP_N4 &kp INS &kp END &kp PG_DN
+            >;
+        };
+
+        /* Layer 1: Function Layer
+         * 
+         * System Mode Switching:
          * F9  = Windows/Linux Mode (Layer 0)
          * F10 = Mac Mode (Layer 2)
          * F11 = Android Mode (Layer 3)
@@ -65,28 +102,28 @@ System Mode Switching:
          */
         function_layer {
             bindings = <
-                /* Row 0: ESC, BT Controls + OS Mode Switching, DEL */
+                /* Row 0: ESC, BT Controls + OS Mode Switching, DEL (14 keys) */
                 &trans    &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4  &out OUT_TOG  &bt BT_CLR  &bt BT_CLR_ALL  &to 0  &to 2  &to 3  &trans  &trans
 
-                /* Row 1: Media controls */
+                /* Row 1: Media controls (14 keys) */
                 &trans    &kp C_MUTE  &kp C_VOL_DN  &kp C_VOL_UP  &kp C_PREV  &kp C_PP  &kp C_NEXT  &kp C_BRI_DN  &kp C_BRI_UP  &trans  &trans  &trans  &trans  &trans
 
-                /* Row 2: Additional controls */
+                /* Row 2: Additional controls (14 keys) */
                 &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans
 
-                /* Row 3 */
+                /* Row 3 (13 keys) */
                 &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans
 
-                /* Row 4 */
+                /* Row 4 (13 keys) */
                 &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans
 
-                /* Row 5 */
+                /* Row 5 (11 keys) */
                 &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans
 
-                /* Row 6 */
+                /* Row 6 (10 keys) */
                 &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans
 
-                /* Row 7 */
+                /* Row 7 (10 keys) */
                 &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans
             >;
         };
@@ -97,97 +134,61 @@ System Mode Switching:
          */
         mac_layer {
             bindings = <
-                /* Row 0: ESC, F1-F12, DEL */
+                /* Row 0: ESC, F1-F12, DEL (14 keys) */
                 &kp ESC   &kp F1    &kp F2    &kp F3    &kp F4    &kp F5    &kp F6    &kp F7    &kp F8    &kp F9    &kp F10   &kp F11   &kp F12   &kp DEL
 
-                /* Row 1: Grave, 1-0, Minus, Equal, Backspace */
+                /* Row 1: Grave, 1-0, Minus, Equal, Backspace (14 keys) */
                 &kp GRAVE &kp N1    &kp N2    &kp N3    &kp N4    &kp N5    &kp N6    &kp N7    &kp N8    &kp N9    &kp N0    &kp MINUS &kp EQUAL &kp BSPC
 
-                /* Row 2: Tab, Q-P, [, ], \ */
+                /* Row 2: Tab, Q-P, [, ], \ (14 keys) */
                 &kp TAB   &kp Q     &kp W     &kp E     &kp R     &kp T     &kp Y     &kp U     &kp I     &kp O     &kp P     &kp LBKT  &kp RBKT  &kp BSLH
 
-                /* Row 3: Caps, A-L, ;, ', Enter */
+                /* Row 3: Caps, A-L, ;, ', Enter (13 keys) */
                 &kp CAPS  &kp A     &kp S     &kp D     &kp F     &kp G     &kp H     &kp J     &kp K     &kp L     &kp SEMI  &kp SQT   &kp RET
 
-                /* Row 4: LShift, Z-M, ,, ., /, RShift, Up */
+                /* Row 4: LShift, Z-M, ,, ., /, RShift, Up (13 keys) */
                 &kp LSHFT &kp Z     &kp X     &kp C     &kp V     &kp B     &kp N     &kp M     &kp COMMA &kp DOT   &kp FSLH  &kp RSHFT &kp UP
 
-                /* Row 5: LCtrl, LALT (Mac Option), LGUI (Mac Cmd), Space, RGUI (Mac Cmd), RALT, Menu, RCtrl, Navigation */
+                /* Row 5: LCtrl, LALT (Option), LGUI (Cmd), Space, RGUI (Cmd), RALT, Fn, RCtrl, Navigation (11 keys) */
                 &kp LCTRL &kp LALT  &kp LGUI  &kp SPACE &kp RGUI  &kp RALT  &mo 1     &kp RCTRL &kp LEFT  &kp DOWN  &kp RIGHT
 
-                /* Row 6: NumLock, /, *, -, 7, 8, 9, +, Home, PgUp */
+                /* Row 6: NumLock, /, *, -, 7, 8, 9, +, Home, PgUp (10 keys) */
                 &kp KP_NUM &kp KP_DIVIDE &kp KP_MULTIPLY &kp KP_MINUS &kp KP_N7 &kp KP_N8 &kp KP_N9 &kp KP_PLUS &kp HOME &kp PG_UP
 
-                /* Row 7: 0, ., =, 1, 2, 3, 4, Ins, End, PgDn */
+                /* Row 7: 0, ., =, 1, 2, 3, 4, Ins, End, PgDn (10 keys) */
                 &kp KP_N0 &kp KP_DOT &kp EQUAL &kp KP_N1 &kp KP_N2 &kp KP_N3 &kp KP_N4 &kp INS &kp END &kp PG_DN
             >;
         };
 
         /* Layer 3: Android/Chrome OS Mode
          * Optimized for Android devices and Chromebooks
-         * Similar to Windows but with Android-specific shortcuts
          */
         android_layer {
             bindings = <
-                /* Row 0: ESC, F1-F12, DEL */
+                /* Row 0: ESC, F1-F12, DEL (14 keys) */
                 &kp ESC   &kp F1    &kp F2    &kp F3    &kp F4    &kp F5    &kp F6    &kp F7    &kp F8    &kp F9    &kp F10   &kp F11   &kp F12   &kp DEL
 
-                /* Row 1: Grave, 1-0, Minus, Equal, Backspace */
+                /* Row 1: Grave, 1-0, Minus, Equal, Backspace (14 keys) */
                 &kp GRAVE &kp N1    &kp N2    &kp N3    &kp N4    &kp N5    &kp N6    &kp N7    &kp N8    &kp N9    &kp N0    &kp MINUS &kp EQUAL &kp BSPC
 
-                /* Row 2: Tab, Q-P, [, ], \ */
+                /* Row 2: Tab, Q-P, [, ], \ (14 keys) */
                 &kp TAB   &kp Q     &kp W     &kp E     &kp R     &kp T     &kp Y     &kp U     &kp I     &kp O     &kp P     &kp LBKT  &kp RBKT  &kp BSLH
 
-                /* Row 3: Caps, A-L, ;, ', Enter */
+                /* Row 3: Caps, A-L, ;, ', Enter (13 keys) */
                 &kp CAPS  &kp A     &kp S     &kp D     &kp F     &kp G     &kp H     &kp J     &kp K     &kp L     &kp SEMI  &kp SQT   &kp RET
 
-                /* Row 4: LShift, Z-M, ,, ., /, RShift, Up */
+                /* Row 4: LShift, Z-M, ,, ., /, RShift, Up (13 keys) */
                 &kp LSHFT &kp Z     &kp X     &kp C     &kp V     &kp B     &kp N     &kp M     &kp COMMA &kp DOT   &kp FSLH  &kp RSHFT &kp UP
 
-                /* Row 5: LCtrl, LGUI (Search), LAlt, Space, RAlt, RGUI, Menu, RCtrl, Navigation */
+                /* Row 5: LCtrl, LGUI (Search), LAlt, Space, RAlt, RGUI, Fn, RCtrl, Navigation (11 keys) */
                 &kp LCTRL &kp LGUI  &kp LALT  &kp SPACE &kp RALT  &kp RGUI  &mo 1     &kp RCTRL &kp LEFT  &kp DOWN  &kp RIGHT
 
-                /* Row 6: NumLock, /, *, -, 7, 8, 9, +, Home, PgUp */
+                /* Row 6: NumLock, /, *, -, 7, 8, 9, +, Home, PgUp (10 keys) */
                 &kp KP_NUM &kp KP_DIVIDE &kp KP_MULTIPLY &kp KP_MINUS &kp KP_N7 &kp KP_N8 &kp KP_N9 &kp KP_PLUS &kp HOME &kp PG_UP
 
-                /* Row 7: 0, ., =, 1, 2, 3, 4, Ins, End, PgDn */
+                /* Row 7: 0, ., =, 1, 2, 3, 4, Ins, End, PgDn (10 keys) */
                 &kp KP_N0 &kp KP_DOT &kp EQUAL &kp KP_N1 &kp KP_N2 &kp KP_N3 &kp KP_N4 &kp INS &kp END &kp PG_DN
             >;
         };
     };
-                /* Row 5 */
-                &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans
-
-                /* Row 6 */
-                &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans
-
-                /* Row 7 */
-                &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans    &trans
-            >;
-        };
-    };
-
-    /* Conditional Layers for OS-Specific Behaviors (Optional)
-     * Uncomment and configure if you need different key behaviors per OS
-     */
-    
-    /* 
-    behaviors {
-        // Windows/Linux GUI key
-        win_gui: windows_gui {
-            compatible = "zmk,behavior-mod-morph";
-            #binding-cells = <0>;
-            bindings = <&kp LGUI>, <&kp LALT>;
-            mods = <(MOD_LCTL)>;
-        };
-        
-        // Mac Command key behavior
-        mac_cmd: mac_command {
-            compatible = "zmk,behavior-mod-morph";
-            #binding-cells = <0>;
-            bindings = <&kp LGUI>, <&kp LALT>;
-            mods = <(MOD_LALT)>;
-        };
-    };
-    */
 };
