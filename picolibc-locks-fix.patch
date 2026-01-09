@@ -1,0 +1,67 @@
+--- a/zephyr/lib/libc/picolibc/locks.c
++++ b/zephyr/lib/libc/picolibc/locks.c
+@@ -6,23 +6,36 @@
+ 
+ #include "picolibc-hooks.h"
+ 
+ #ifdef CONFIG_MULTITHREADING
+-#define _LOCK_T void *
+-K_MUTEX_DEFINE(__lock___libc_recursive_mutex);
++/* newlib expects `struct __lock` and `_LOCK_T` to be a pointer to it */
++struct __lock {
++#ifndef CONFIG_USERSPACE
++	struct k_mutex mutex;
++#else
++	struct k_mutex *mutex;
++#endif
++};
++
++typedef struct __lock * _LOCK_T;
++
++struct __lock __lock___libc_recursive_mutex;
+ 
+-#ifdef CONFIG_USERSPACE
+ /* Initialise recursive locks and grant userspace access after boot */
+-static int picolibc_locks_prepare(void)
++static int picolibc_locks_prepare(void)
+ {
+-	/* Initialise recursive locks */
+-	k_object_access_all_grant(&__lock___libc_recursive_mutex);
++#ifndef CONFIG_USERSPACE
++	k_mutex_init(&__lock___libc_recursive_mutex.mutex);
++#else
++	__lock___libc_recursive_mutex.mutex = k_object_alloc(K_OBJ_MUTEX);
++	k_mutex_init(__lock___libc_recursive_mutex.mutex);
++	k_object_access_all_grant(__lock___libc_recursive_mutex.mutex);
++#endif
+ 
+ 	return 0;
+ }
+@@ -32,62 +45,67 @@ SYS_INIT(picolibc_locks_prepare, POST_KERNEL,
+ /* Create a new dynamic recursive lock */
+ void __retarget_lock_init_recursive(_LOCK_T *lock)
+ {
++	struct __lock *obj;
++
+ 	__ASSERT_NO_MSG(lock != NULL);
+ 
+-	/* Allocate mutex object */
+-#ifndef CONFIG_USERSPACE
+-	*lock = malloc(sizeof(struct k_mutex));
++	/* Allocate lock wrapper and underlying mutex as needed */
++	struct __lock *obj = malloc(sizeof(struct __lock));
++	__ASSERT(obj != NULL, "recursive lock allocation failed");
++
++#ifndef CONFIG_USERSPACE
++	k_mutex_init(&obj->mutex);
+ #else
+-	*lock = k_object_alloc(K_OBJ_MUTEX);
++	obj->mutex = k_object_alloc(K_OBJ_MUTEX);
++	__ASSERT(obj->mutex != NULL, "k_object_alloc failed");
++	k_mutex_init(obj->mutex);
+ #endif /* !CONFIG_USERSPACE */
+-	__ASSERT(*lock != NULL, "recursive lock allocation failed");
+-
+-	k_mutex_init((struct k_mutex *)*lock);
++	*lock = (struct __lock *)obj;
+ }
